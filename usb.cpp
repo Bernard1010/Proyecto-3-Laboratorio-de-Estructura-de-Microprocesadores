@@ -19,8 +19,8 @@ comando de compilacion: g++ nombre.cpp -o nombreout
 
 //CONCATENAR STRINGS Y CONVERTIR A CHAR
 /*
-string ls("ls ");								//comando para ver archivos del directorio en que se este dentro
-string dir1("Descargas");						//directorio
+string ls("ls ");					        //comando para ver archivos del directorio en que se este dentro
+string dir1("Descargas");				        //directorio
 string dir2("Documentos/rar");					//directorio + nombre de archivo de salida
 string destino(">");							//signo para crear un archivo de texto
 
