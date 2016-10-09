@@ -33,7 +33,7 @@ string Documentos("/home/berni/Documentos");											//ruta a directorio de do
 int numarchivos=0;																		//Cantidad de archivos dentro del usb fuente
 typedef char Lista[100];
 
-char *cstr = new char[100];																//Variable char para comandos
+char *cstr = new char[100];																//Variable char para almacenar comandos
 BITMAP *buffer;																			//buffer de almacenamiento de todos los sprites
 BITMAP *fondo;																			//variable para guardar imagen del fondo
 BITMAP *fa;																				//variable para guardar imagen del fondo
@@ -127,14 +127,14 @@ void DetectarUSBFuente(char *var)
    
    
 	 
-	rewind(doc);																			//rebobina el archivon con el nombre del usb fuente conectado
+	rewind(doc);																		//rebobina el archivon con el nombre del usb fuente conectado
 	fscanf(doc,"%s",var);																//se adquiere el nombre del usb fuente conectado
-	fclose(doc);																			//cierra el archivo																								
+	fclose(doc);																		//cierra el archivo																								
 	
 	clear(buffer);
 	draw_sprite(buffer,fondo,0,0);
 	//draw_sprite(buffer,iconos,0,500);
-	textout_ex(buffer,font, "NUEVO DISPOSITIVO", 100, 50, makecol(0,255,0), -1);
+	textout_ex(buffer,font, "NUEVO DISPOSITIVO", 100, 50, makecol(0,255,0), -1);	
 	textout_ex(buffer,font, var, 100, 60, makecol(0,255,0), -1);
 	
 	pantalla();
@@ -144,36 +144,36 @@ void DetectarUSBFuente(char *var)
 bool ArchivoODirectorio(Lista nomarch)
 {
 	
-	comando=dirusb0+varusb+" && "+"file "+nomarch+destino+Documentos+archivoARCDIR;					
+	comando=dirusb0+varusb+" && "+"file "+nomarch+destino+Documentos+archivoARCDIR;		//comando que guarda archivo con caracteristica del elemento nomarch	
 	strcpy(cstr, comando.c_str());
-	system(cstr);																		
+	system(cstr);																		//ejecuta comando					
 		
-	comando=Documentos+archivoARCDIR;					
+	comando=Documentos+archivoARCDIR;													//carga en comando la direccion del archivo archivoARCDIR
 	strcpy(cstr, comando.c_str());
-	docaux=fopen(cstr,"r");
+	docaux=fopen(cstr,"r");																//abre archivo archivoARCDIR
 		
-	char dato[100];
-	char *ptrToken;
+	char dato[100];																		//variable para almacenar carateristicas de elementos
+	char *ptrToken;																		
 	char linea[140];
 		
-	fgets(linea, 100, docaux);
-	ptrToken = strtok(linea, ":");
+	fgets(linea, 100, docaux);															//se lee el documento con las caractersiticas
+	ptrToken = strtok(linea, ":");														//corta la linea cuando vea un :
 	strcpy(dato, ptrToken);
 					
-	ptrToken = strtok(NULL,	 "\n");
-	strcpy(dato, ptrToken);
+	ptrToken = strtok(NULL,	 "\n");														//corta la linea cuando vea un final de linea
+	strcpy(dato, ptrToken);																//carga la caracteristica del elemento en dato
 	
 		
-	if(strcmp(dato," directory")!=0)
+	if(strcmp(dato," directory")!=0)													//compara el contenido en dato
 	{
 		strcpy(dato, "");
-		return true;
+		return true;																	//Devuelve que es un archivo
 		
 	}
 	else
 	{
 		strcpy(dato, ""); 	
-		return false;
+		return false;																	//devuelve que es un directorio
 		
 	}
 	
@@ -183,9 +183,10 @@ bool ArchivoODirectorio(Lista nomarch)
 
 int main() 
 {
-		
+		//Muestra la primera parte del programa
 		init_allegro();
 		cargasprites();     
+		
 		draw_sprite(buffer,fondo,0,0);
 		draw_sprite(buffer,duplicador,50,50);
 		draw_sprite(buffer,iconos,0,250);
@@ -194,7 +195,7 @@ int main()
 		
 		
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		while(true)
+		while(true)																			//Se espera el enter para pasar a la busqueda del usb fuente
 		{
 			if(key[KEY_ENTER])
 			{
@@ -210,24 +211,21 @@ int main()
 		sleep(1);
 		
 		
-		DetectarUSBFuente(varusb);
-		sleep(1);
+		DetectarUSBFuente(varusb);															//Funcion para detectar usb fuente
+		sleep(1);																			//espera mientras se establece la comunicacion con el usb fuente
 		
 		comando=dirbase+ls+dirusbs+varusb+destino+Documentos+archivofuente;					//Se crea en la ruta de documentos el archivo con el nombre de los archivos contenidos dentro del usb fuente
-		
 		strcpy(cstr, comando.c_str());
 		system(cstr);																		//Se ejecuta el comando
 		
 		comando = Documentos+archivofuente;													//Se busca la ruta hacia el archivo con los nombres de los archivos del usb fuente
 		strcpy(cstr, comando.c_str());
 		archer = fopen(cstr,"r");															//abre el archivo desde la direccion
-   			
-   		  			
-   																							
+   		   																							
 		while(!feof(archer))																//ciclo hasta encontrar el final de linea
 		{	
 			numarchivos++;																	//Cantidad de lineas leidas
-			fscanf(archer,"%[^\n]\n",aux);													//adquiere los datos del archivo linea por linea
+			fscanf(archer,"%[^\n]\n",aux);													//se lee el archivo linea por linea
 		
 		}
 		rewind(archer);																		//se rebobina el archivo y se coloca el cursor al inicio
@@ -247,89 +245,21 @@ int main()
 		
 		for(int i =0;i<numarchivos;i++)																//ciclo para mostrar el nombre de los archivos almacenados en la lista
 		{
-			if(ArchivoODirectorio(ListaNombresArchivos[i]))
+			if(ArchivoODirectorio(ListaNombresArchivos[i]))											//comprueba si es un archivo o un directorio
 				{
-					textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);
+					textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);	//si es archivo solamente imprime el nombre
 												
 				}
 			else
 				{
-					textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);
-					textout_ex(buffer,font,"*" , 90, i*15+200, makecol(0,0,0), -1);
+					textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);	//imprime el nombre del directorio
+					textout_ex(buffer,font,"*" , 90, i*15+200, makecol(0,0,0), -1);							//coloca un asterisco para diferenciar las carpetas
 						
 				}
-				
-			
-			/*switch(c)
-			{
-				case 0:
-				{	
-					if(ArchivoODirectorio(ListaNombresArchivos[i]))
-					{
-						textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);
-						
-						c++;
-						break;
-					}
-					else
-					{
-						textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);
-						textout_ex(buffer,font,"*" , 90, i*15+200, makecol(0,0,0), -1);
-						c++;
-						break;
-					}
-				}
-				
-				case 1:
-				{
-					if(ArchivoODirectorio(ListaNombresArchivos[i]))
-					{
-						textout_ex(buffer,font,ListaNombresArchivos[i] , 300, (i-1)*15+200, makecol(0,0,0), -1);
-						
-						c++;
-						break;
-					}
-					else
-					{
-						textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i-1)*15+200, makecol(0,0,0), -1);
-						textout_ex(buffer,font,"*" , 290, (i-1)*15+200, makecol(0,0,0), -1);
-						c++;
-						break;
-					}
-					
-					
-				}
-				
-				case 2:
-				{
-					if(ArchivoODirectorio(ListaNombresArchivos[i]))
-					{
-						textout_ex(buffer,font,ListaNombresArchivos[i] , 500, (i-2)*15+200, makecol(0,0,0), -1);
-						c=0;
-						break;
-					}
-					else
-					{
-						textout_ex(buffer,font,ListaNombresArchivos[i] , 500, (i-2)*15+200, makecol(0,0,0), -1);
-						textout_ex(buffer,font,"*" , 490, (i-2)*15+200, makecol(0,0,0), -1);
-						c++;
-						break;
-						
-					}
-					
-					
-				}
-			}*/
-			
-			
-				
-		
+								
 		}
 			
-		
-		
-		
-				
+						
 		pantalla();
 		while(true)
 		{
@@ -340,10 +270,7 @@ int main()
 		}
 		
 		
-		
-		
-		
-		
+				
         allegro_exit();
 		return 0;
 }
