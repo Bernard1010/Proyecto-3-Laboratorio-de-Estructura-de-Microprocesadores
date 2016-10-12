@@ -19,7 +19,7 @@ FILE *docaux;																			//puntero auxuliar para saber si es directorio o
 char aux[100];
 char varusb[60];																		//variable del nombre del dispositivo de almacenamiento usb fuente
 string dirbase("cd /home/berni && ");													//ruta a directorios base
-string dirusbs(" /media/berni/");														//ruta a directorio de los dispositivos usb conectados
+string dirusbs("/media/berni/");														//ruta a directorio de los dispositivos usb conectados
 string dirusb0("cd /media/berni/");														//ruta a directorio de los dispositivos usb conectados
 string ls(" ls ");																		//comando para ver archivos del directorio en que se este dentro
 string dir1("/Proyecto_3");																//directorio de archivos para el proyecto*** Carpeta necesaria dentro de documentos
@@ -30,23 +30,38 @@ string archivoARCDIR("/arcdir");														//nombre de archivo donde se deter
 string destino(">");																	//signo de comando para crear un archivo
 string Documentos("/home/berni/Documentos");											//ruta a directorio de documentos
 
+string file("file ");
+string cp(" cp -r ");																	//Comando para copiar archivos
+string mkdir(" mkdir ");																//Comando para crear directorio
+string copiar;
+string nuevodir;
+string bufferm("/buffer_mem");															//Nombre de directorio donde se guardara la copia temporal de la llave
+string findpath(" find ");
+string nombre(" -name ");
+string archivoPATH("/archivoPath");
+
+
+
+
 int numarchivos=0;																		//Cantidad de archivos dentro del usb fuente
 typedef char Lista[100];
 
 char *cstr = new char[100];																//Variable char para almacenar comandos
 BITMAP *buffer;																			//buffer de almacenamiento de todos los sprites
 BITMAP *fondo;																			//variable para guardar imagen del fondo
-BITMAP *fa;																				//variable para guardar imagen del fondo
-BITMAP *duplicador;
-BITMAP *iconos;
-BITMAP *press;
-BITMAP *usbs;
+BITMAP *duplicador;																		//variable para guardar imagen del titulo
+BITMAP *press;																			//variable para guardar imagen de presione enter
+BITMAP *usbs;																			//variable para guardar imagen de simbolo de usb fuente
+BITMAP *caja;																			//variable para guardar imagen de caja para seleccion
+BITMAP *sobrecaja;																		//variable para guardar imagen de sobre caja en seleccion
+BITMAP *marcacaja;																		//variable para guardar imagen de marcA caja en seleccion
+
 
 int x=0;
 int sizescreen_x=700;																	//tamano horizontal de la ventana de juego
-int sizescreen_y=750;																	//Tamano vertical de la ventana de juego
+int sizescreen_y=300;																	//Tamano vertical de la ventana de juego
 
-
+int scroll=0;																			//variable para subir o bajar a traves de la lista
 
 ///////////////----------FUNCIONES-----------////////////////
 
@@ -57,7 +72,7 @@ void pantalla()
 } 
 
 
-void init_allegro()					//Funcion de inicializacion de la libreria Allegro
+void init_allegro()																		//Funcion de inicializacion de la libreria Allegro
 {
 		allegro_init();
 		install_keyboard();
@@ -71,11 +86,12 @@ void cargasprites()
 {
 		buffer=create_bitmap(sizescreen_x,sizescreen_y);			//Creacion de espacio de juego
         fondo = load_bitmap("fondo.bmp",NULL);						//^
-		fa = load_bitmap("usbi.bmp",NULL);								//^
-		duplicador = load_bitmap("duplicador.bmp",NULL);				//^
-		iconos = load_bitmap("iconos.bmp",NULL);						//^
+		duplicador = load_bitmap("duplicador.bmp",NULL);			//^
 		press = load_bitmap("press.bmp",NULL);						//^
 		usbs = load_bitmap("usbs.bmp",NULL);						//^
+		caja= load_bitmap("caja.bmp",NULL);							//^
+		sobrecaja= load_bitmap("sobrecaja.bmp",NULL);				//^
+		marcacaja= load_bitmap("marcacaja.bmp",NULL);				//^
         		
 }
 
@@ -95,47 +111,26 @@ void DetectarUSBFuente(char *var)
 	strcpy(cstr2, comando.c_str());
 	doc = fopen(cstr2,"r");																//abre el archivo desde la direccion
 	
-	
-	
-	
 	while(true)																			//entra en el ciclo infinito de comprobacion
 	{	
 		system(cstr1);																	//refresca los dato del directorio de las usb conectadas
 		fseek( doc, 0, SEEK_END );														//posiciona el cursor al final de archivo
 		if (ftell( doc ) == 0 )															//si es 0 esta vacio el archivo-no usb conectadas
 		{	
-			if(x<100000000)
-			{
-				x=x+30000;
-				pivot_sprite(buffer,fa,340,340,80,85,x);
-				pantalla();
-			}	
-			else
-			{
-				pivot_sprite(buffer,fa,340,340,80,85,x);
-				
-				pantalla();
-				x=0;
-			}
-		
-		
+			
 		}
-				
-		
 		else{break;}																	//si no esta vacio rompe el ciclo 
 	}
    
-   
-	 
+   	 
 	rewind(doc);																		//rebobina el archivon con el nombre del usb fuente conectado
 	fscanf(doc,"%s",var);																//se adquiere el nombre del usb fuente conectado
 	fclose(doc);																		//cierra el archivo																								
 	
 	clear(buffer);
 	draw_sprite(buffer,fondo,0,0);
-	//draw_sprite(buffer,iconos,0,500);
-	textout_ex(buffer,font, "NUEVO DISPOSITIVO", 100, 50, makecol(0,255,0), -1);	
-	textout_ex(buffer,font, var, 100, 60, makecol(0,255,0), -1);
+	textout_ex(buffer,font, "NUEVO DISPOSITIVO", 400, 20, makecol(0,255,0), -1);	
+	textout_ex(buffer,font, var, 400, 30, makecol(0,255,0), -1);
 	
 	pantalla();
 }
@@ -144,26 +139,45 @@ void DetectarUSBFuente(char *var)
 bool ArchivoODirectorio(Lista nomarch)
 {
 	
-	comando=dirusb0+varusb+" && "+"file "+nomarch+destino+Documentos+archivoARCDIR;		//comando que guarda archivo con caracteristica del elemento nomarch	
+	FILE *pathaux;
+	char direccion[200];
+	
+	comando=findpath+Documentos+dir1+bufferm+nombre+"\""+nomarch+"\""+destino+Documentos+archivoPATH;
+	char *cstr6 = new char[comando.length() + 1];
+	strcpy(cstr6, comando.c_str());
+	system(cstr6);	
+	
+	comando=Documentos+archivoPATH;	
+	char *cstr7 = new char[comando.length() + 1];
+	strcpy(cstr7, comando.c_str());
+	pathaux=fopen(cstr7,"r");
+	
+	fscanf(pathaux,"%[^\n]\n",direccion);	
+	fclose(pathaux);
+	
+	
+	
+	
+	comando=file+"\""+direccion+"\""+destino+Documentos+archivoARCDIR;		//comando que guarda archivo con caracteristica del elemento nomarch	
 	strcpy(cstr, comando.c_str());
 	system(cstr);																		//ejecuta comando					
-		
+
 	comando=Documentos+archivoARCDIR;													//carga en comando la direccion del archivo archivoARCDIR
 	strcpy(cstr, comando.c_str());
 	docaux=fopen(cstr,"r");																//abre archivo archivoARCDIR
 		
-	char dato[100];																		//variable para almacenar carateristicas de elementos
+	char dato[200];																		//variable para almacenar carateristicas de elementos
 	char *ptrToken;																		
 	char linea[140];
 		
-	fgets(linea, 100, docaux);															//se lee el documento con las caractersiticas
+	fgets(linea, 200, docaux);															//se lee el documento con las caractersiticas
 	ptrToken = strtok(linea, ":");														//corta la linea cuando vea un :
 	strcpy(dato, ptrToken);
 					
 	ptrToken = strtok(NULL,	 "\n");														//corta la linea cuando vea un final de linea
 	strcpy(dato, ptrToken);																//carga la caracteristica del elemento en dato
 	
-		
+	fclose(docaux);
 	if(strcmp(dato," directory")!=0)													//compara el contenido en dato
 	{
 		strcpy(dato, "");
@@ -179,6 +193,25 @@ bool ArchivoODirectorio(Lista nomarch)
 	
 }
 
+void NuevoDirectorio()
+{
+	nuevodir = mkdir+Documentos+dir1+bufferm;
+	char *cstr3 = new char[nuevodir.length() + 1];
+	strcpy(cstr3, nuevodir.c_str());
+	system(cstr3);
+}
+
+void CopiarArchivos(Lista archivo)
+{
+	copiar = cp+"\""+dirusbs+varusb+"/"+archivo+"\""+(" ")+Documentos+dir1+bufferm;
+	char *cstr3 = new char[copiar.length() + 1];
+	strcpy(cstr3, copiar.c_str());
+	system(cstr3);
+	
+}
+
+
+
 
 
 int main() 
@@ -189,8 +222,7 @@ int main()
 		
 		draw_sprite(buffer,fondo,0,0);
 		draw_sprite(buffer,duplicador,50,50);
-		draw_sprite(buffer,iconos,0,250);
-		draw_sprite(buffer,press,150,600);
+		draw_sprite(buffer,press,150,200);
 		pantalla();
 		
 		
@@ -206,7 +238,6 @@ int main()
 		clear(buffer);
 		draw_sprite(buffer,fondo,0,0);
 		draw_sprite(buffer,usbs,180,100);
-		draw_sprite(buffer,iconos,0,500);
 		pantalla();
 		sleep(1);
 		
@@ -230,7 +261,12 @@ int main()
 		}
 		rewind(archer);																		//se rebobina el archivo y se coloca el cursor al inicio
 		Lista ListaNombresArchivos[numarchivos]; 											//se crea una lista del tamano de archivos del usb fuente
+		bool ListaCopia[numarchivos];
 	
+		for(int i=0;i<numarchivos;i++)
+		{
+			ListaCopia[i]=false;
+		}
 	
 		int f=0;																										
 		while(!feof(archer))																		//ciclo hasta encontrar el final de linea
@@ -240,30 +276,156 @@ int main()
 		}
 		fclose(archer);
 		
-		textprintf_ex(buffer, font, 250, 60, makecol(255, 0, 0),-1, "Cantidad de elementos: %d", numarchivos);//Imprime la cantidad de archivos
-		int c=0;
+		NuevoDirectorio();
 		
-		for(int i =0;i<numarchivos;i++)																//ciclo para mostrar el nombre de los archivos almacenados en la lista
+		for(int i=0;i<numarchivos;i++)
 		{
-			if(ArchivoODirectorio(ListaNombresArchivos[i]))											//comprueba si es un archivo o un directorio
-				{
-					textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);	//si es archivo solamente imprime el nombre
-												
-				}
-			else
-				{
-					textout_ex(buffer,font,ListaNombresArchivos[i] , 100, i*15+200, makecol(0,0,0), -1);	//imprime el nombre del directorio
-					textout_ex(buffer,font,"*" , 90, i*15+200, makecol(0,0,0), -1);							//coloca un asterisco para diferenciar las carpetas
-						
-				}
-								
+			CopiarArchivos(ListaNombresArchivos[i]);
 		}
-			
-						
+		
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		/*Seccion para preguntar al usuario que desea hacer-> copia total o seleccionar archivos*/
+		
+		
+//////////////////////////////////////////////////////////////////////////////////////////////////////		
+		textprintf_ex(buffer, font, 500, 30, makecol(255, 0, 0),-1, "# elementos: %d", numarchivos);//Imprime la cantidad de archivos
 		pantalla();
+		
+/////////////////////////////////////////////////////////////////////////////////////////////////////		
+//IMPRIME LA LISTA DE ARCHIVOS		
+		for(int i=0;i<numarchivos;i++)																//ciclo para mostrar el nombre de los archivos almacenados en la lista
+				{
+					
+					if(ArchivoODirectorio(ListaNombresArchivos[i]))											//comprueba si es un archivo o un directorio
+						{
+							
+							textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+20, makecol(0,0,0), -1);	//si es archivo solamente imprime el nombre
+							draw_sprite(buffer,caja,77, (i)*15+19);						
+						}
+					else
+						{
+							textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+20, makecol(0,0,0), -1);	//imprime el nombre del directorio
+							textout_ex(buffer,font,"*" , 90, (i)*15+20, makecol(0,0,0), -1);							//coloca un asterisco para diferenciar las carpetas
+							draw_sprite(buffer,caja,77, (i)*15+19);	
+						}
+				}
+		draw_sprite(buffer,sobrecaja,77,19);	
+		pantalla();
+		
+//CICLO PARA ESCOGER ARCHIVOS		
+		while(!key[KEY_ESC])
+		{
+			usleep(100000);
+			char tecla= readkey() >> 8;																	//espera teclaso del usuario
+			
+			if(tecla==KEY_S)
+			{
+				ListaCopia[scroll]=true;
+				draw_sprite(buffer,marcacaja,77, (scroll)*15+19);
+				
+			}
+			
+			if(tecla==KEY_D)
+			{
+				ListaCopia[scroll]=false;
+				draw_sprite(buffer,sobrecaja,77, (scroll)*15+19);
+				
+			}
+						
+			else if(tecla==KEY_DOWN)
+			{
+				for(int i=0;i<numarchivos;i++)																//ciclo para mostrar el nombre de los archivos almacenados en la lista
+				{	
+					if(ArchivoODirectorio(ListaNombresArchivos[i]))											//comprueba si es un archivo o un directorio
+						{
+							textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+20, makecol(0,0,0), -1);	//si es archivo solamente imprime el nombre
+							draw_sprite(buffer,caja,77, (i)*15+19);						
+						}
+					else
+						{
+							textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+20, makecol(0,0,0), -1);	//imprime el nombre del directorio
+							textout_ex(buffer,font,"*" , 90, (i)*15+20, makecol(0,0,0), -1);							//coloca un asterisco para diferenciar las carpetas
+							draw_sprite(buffer,caja,77, (i)*15+19);	
+						}
+				}
+				if(scroll+1<numarchivos)
+				{
+					scroll++;
+					draw_sprite(buffer,sobrecaja,77, (scroll)*15+19);	
+					if(ListaCopia[scroll])
+					{
+					draw_sprite(buffer,marcacaja,77, (scroll)*15+19);
+					}
+					
+				}
+			
+				
+				else
+				{
+					draw_sprite(buffer,sobrecaja,77, (scroll)*15+19);
+					if(ListaCopia[scroll])
+					{
+						draw_sprite(buffer,marcacaja,77, (scroll)*15+19);
+					}
+					
+					
+				}
+			}
+			
+			if(tecla==KEY_UP)
+			{
+				for(int i=0;i<numarchivos;i++)																//ciclo para mostrar el nombre de los archivos almacenados en la lista
+				{
+					if(ArchivoODirectorio(ListaNombresArchivos[i]))											//comprueba si es un archivo o un directorio
+						{
+							textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+20, makecol(0,0,0), -1);	//si es archivo solamente imprime el nombre
+							draw_sprite(buffer,caja,77, (i)*15+19);						
+						}
+					else
+						{
+							textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+20, makecol(0,0,0), -1);	//imprime el nombre del directorio
+							textout_ex(buffer,font,"*" , 90, (i)*15+20, makecol(0,0,0), -1);							//coloca un asterisco para diferenciar las carpetas
+							draw_sprite(buffer,caja,77, (i)*15+19);	
+						}
+				}
+				if(scroll>0)
+				{
+					scroll--;
+					draw_sprite(buffer,sobrecaja,77, (scroll)*15+19);	
+					if(ListaCopia[scroll])
+					{
+						draw_sprite(buffer,marcacaja,77, (scroll)*15+19);
+					}
+					
+					
+				}
+				else
+				{
+					draw_sprite(buffer,sobrecaja,77, (scroll)*15+19);
+					if(ListaCopia[scroll])
+					{
+					draw_sprite(buffer,marcacaja,77, (scroll)*15+19);
+					}
+					
+				}
+			}
+					
+			
+			
+		pantalla();
+		
+		}
+		
+		
+		
+		
+		
+		
 		while(true)
 		{
-			if(key[KEY_ENTER])
+			char tecla1= readkey() >> 8;
+			if(tecla1==KEY_ENTER)
 			{
 				break;
 			}
