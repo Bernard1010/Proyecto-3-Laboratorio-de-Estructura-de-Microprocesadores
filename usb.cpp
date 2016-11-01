@@ -17,10 +17,12 @@ using namespace std;
 FILE *archer;																			//puntero a archivo con el nombre de los archivos del usb fuente
 FILE *docaux;																			//puntero auxuliar para saber si es directorio o archivo
 char aux[100];																			//
-char varusb[60];																		//variable del nombre del dispositivo de almacenamiento usb fuente
-string dirbase("cd /home/berni && ");													//ruta a directorios base
-string dirusbs("/media/berni/");														//ruta a directorio de los dispositivos usb conectados
-string dirusb0("cd /media/berni/");														//ruta a directorio de los dispositivos usb conectados
+char varusb[60];
+
+																		//variable del nombre del dispositivo de almacenamiento usb fuente
+string dirbase("cd /home/administrator && ");													//ruta a directorios base
+string dirusbs("/media/administrator/");														//ruta a directorio de los dispositivos usb conectados
+string dirusb0("cd /administrator/");														//ruta a directorio de los dispositivos usb conectados
 string ls(" ls ");																		//comando para ver archivos del directorio en que se este dentro
 string dir1("/Proyecto_3");																//directorio de archivos para el proyecto*** Carpeta necesaria dentro de documentos
 string comando;																			//variable de comando de ejecucion 
@@ -28,7 +30,7 @@ string usbconectadas("/usbconectadas");													//nombre de archivo con nomb
 string archivofuente("/archivosfuente");												//nombre de archivo con nombre de archivos dentro del usb fuente
 string archivoARCDIR("/arcdir");														//nombre de archivo donde se determina si es archivo o directorio
 string destino(">");																	//signo de comando para crear un archivo
-string Documentos("/home/berni/Documentos");											//ruta a directorio de documentos
+string Documentos("/home/administrator/Documents");											//ruta a directorio de documentos
 
 string file("file ");																	//comando para buscar archivo
 string cp(" cp -r ");																	//Comando para copiar archivos
@@ -66,6 +68,7 @@ BITMAP *usbd;																			//variable para guardar imagen de esperando usb 
 BITMAP *caja;																			//variable para guardar imagen de caja para seleccion
 BITMAP *sobrecaja;																		//variable para guardar imagen de sobre caja en seleccion
 BITMAP *marcacaja;																		//variable para guardar imagen de marca caja en seleccion
+BITMAP *errorcopia;																		//variable para guardar imagen de error al copiar
 
 
 int x=0;
@@ -98,25 +101,26 @@ void init_allegro()																		//Funcion de inicializacion de la libreria 
 void cargasprites()
 {
 		buffer=create_bitmap(sizescreen_x,sizescreen_y);								//Creacion de espacio de pantalla
-		//CARGA DE SPRITES
+																						//CARGA DE SPRITES
+		errorcopia = load_bitmap("errorcopia.bmp",NULL);								//^
 		fondo = load_bitmap("fondo.bmp",NULL);											//^
 		duplicador = load_bitmap("duplicador.bmp",NULL);								//^
 		press = load_bitmap("press.bmp",NULL);											//^
 		usbs = load_bitmap("usbs.bmp",NULL);											//^
-		caja= load_bitmap("caja.bmp",NULL);												//^
-		sobrecaja= load_bitmap("sobrecaja.bmp",NULL);									//^
-		marcacaja= load_bitmap("marcacaja.bmp",NULL);									//^
-		presscopiat= load_bitmap("presscopiat.bmp",NULL);								//^
-		pressselect= load_bitmap("pressseleccion.bmp",NULL);							//^
-		presscancel= load_bitmap("cancelar.bmp",NULL);									//^
-		copiaproceso= load_bitmap("copiaproceso.bmp",NULL);								//^
-		noremoveusb= load_bitmap("noremoveusb.bmp",NULL);								//^
-		usbd= load_bitmap("usbd.bmp",NULL);												//^
+		caja = load_bitmap("caja.bmp",NULL);											//^
+		sobrecaja = load_bitmap("sobrecaja.bmp",NULL);									//^
+		marcacaja = load_bitmap("marcacaja.bmp",NULL);									//^
+		presscopiat = load_bitmap("presscopiat.bmp",NULL);								//^
+		pressselect = load_bitmap("pressseleccion.bmp",NULL);							//^
+		presscancel = load_bitmap("cancelar.bmp",NULL);									//^
+		copiaproceso = load_bitmap("copiaproceso.bmp",NULL);							//^
+		noremoveusb = load_bitmap("noremoveusb.bmp",NULL);								//^
+		usbd = load_bitmap("usbd.bmp",NULL);											//^
 		removeusb = load_bitmap("removeusb.bmp",NULL);									//^
 		copialista = load_bitmap("copialista.bmp",NULL);								//^
 		borrarusbd = load_bitmap("borrarusbd.bmp",NULL);								//^
 		crearcarpeta = load_bitmap("crearcarpeta.bmp",NULL);							//^
-        		
+        
 }
 
 void DetectarUSBFuente(char *var)
@@ -354,7 +358,54 @@ void CopiarTodo()
 	
 	
 }
-
+void RevisarError(int err)																//revisa si la memoria fue removida antes de comezar la copia
+{
+	FILE *doc;
+	char varaux[500];
+	
+	comando = dirbase+ls+dirusbs+destino+Documentos+dir1+usbconectadas;					//Usando el comando ls de linux, se crea un archivo donde se guarda el nombre de los dispositivos USB conectados(aparecen dentro del directorio /media/ususario/), el archivo se guarda en  la direccion luego del simbolo >
+	char *cstr1 = new char[comando.length() + 1];
+	strcpy(cstr1, comando.c_str());
+	system(cstr1);																				
+	
+	
+	comando = Documentos+dir1+usbconectadas;
+	char *cstr2 = new char[comando.length() + 1];
+	strcpy(cstr2, comando.c_str());
+	doc = fopen(cstr2,"r");																//abre el archivo desde la direccion
+	
+	while(true)																			//entra en el ciclo infinito de comprobacion
+	{	
+		system(cstr1);																	//refresca los dato del directorio de las usb conectadas
+		fseek( doc, 0, SEEK_END );														//posiciona el cursor al final de archivo
+		if (ftell( doc ) == 0 )															//si es 0 esta vacio el archivo-no usb conectadas
+		{	
+			draw_sprite(buffer,fondo,0,0);														//imprime fondo
+			draw_sprite(buffer,errorcopia,150,50);												//imprime mensaje de error
+			draw_sprite(buffer,press,150,200);													//imprime mensaje de presione enter
+			pantalla();																			//se muestra en pantalla
+			while(true)																			//espera enter por el usuario
+				{
+					char tecla0= readkey() >> 8;
+					if(tecla0==KEY_ENTER)
+					{
+						err = 1;
+						comando = rm+Documentos+dir1+bufferm;
+						char *cstr2 = new char[comando.length() + 1];
+						strcpy(cstr2, comando.c_str());
+						system(cstr2);
+						break;
+					}
+					else
+					{
+					err = 0;
+					break;
+					}
+				}
+			}
+		else {break;}	
+	}
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -524,7 +575,14 @@ int main()
 while(true)																							//Espera Enter para salir
 {
 		char tecla1= readkey() >> 8;
-	
+		int status;																					//bandera de memoria removida
+		RevisarError(status);																		//funcion de revicion de error
+		if (status == 1)																			//si es verdadero salta al final y cierra el programa
+			{
+				goto end;
+			}
+		
+		
 		if(tecla1==KEY_T)
 		{
 			DirectorioSeleccion();																				//Creacarpeta de copia 
@@ -986,8 +1044,7 @@ while(true)																							//Espera Enter para salir
 	
 	
 }
-
-        allegro_exit();
+end:    allegro_exit();
 		return 0;
 }
 END_OF_MAIN()
