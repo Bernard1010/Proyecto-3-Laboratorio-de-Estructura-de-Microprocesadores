@@ -21,9 +21,9 @@ FILE *archer;																			//puntero a archivo con el nombre de los archivo
 FILE *docaux;																			//puntero auxuliar para saber si es directorio o archivo
 char aux[100];																			//
 char varusb[60];																		//variable del nombre del dispositivo de almacenamiento usb fuente
-string dirbase("cd /home/fepi12 && ");														//ruta a directorios base
-string dirusbs("/media/fepi12/");															//ruta a directorio de los dispositivos usb conectados
-string dirusb0("cd /media/fepi12/");														//ruta a directorio de los dispositivos usb conectados
+string dirbase("cd /home/administrator && ");											//ruta a directorios base
+string dirusbs("/media/administrator/");												//ruta a directorio de los dispositivos usb conectados
+string dirusb0("cd /administrator/");													//ruta a directorio de los dispositivos usb conectados
 string ls(" ls ");																		//comando para ver archivos del directorio en que se este dentro
 string dir1("/Proyecto_3");																//directorio de archivos para el proyecto*** Carpeta necesaria dentro de documentos
 string comando;																			//variable de comando de ejecucion 
@@ -31,7 +31,7 @@ string usbconectadas("/usbconectadas");													//nombre de archivo con nomb
 string archivofuente("/archivosfuente");												//nombre de archivo con nombre de archivos dentro del usb fuente
 string archivoARCDIR("/arcdir");														//nombre de archivo donde se determina si es archivo o directorio
 string destino(">");																	//signo de comando para crear un archivo
-string Documentos("/home/fepi12/Documents");												//ruta a directorio de documentos
+string Documentos("/home/administrator/Documents");										//ruta a directorio de documentos
 
 string file("file ");																	//comando para buscar archivo
 string cp(" cp -r ");																	//Comando para copiar archivos
@@ -70,7 +70,7 @@ BITMAP *usbd;																			//variable para guardar imagen de esperando usb 
 BITMAP *caja;																			//variable para guardar imagen de caja para seleccion
 BITMAP *sobrecaja;																		//variable para guardar imagen de sobre caja en seleccion
 BITMAP *marcacaja;																		//variable para guardar imagen de marca caja en seleccion
-
+BITMAP *errorcopia;																		//variable para guardar imagen de marca error enn copia
 
 int x=0;
 int sizescreen_x=700;																	//tamano horizontal de la ventana de juego
@@ -99,8 +99,8 @@ string G = "G";																			//string para detectar G
 string num;																				//
 //string num2;																			//variable donde se guarda tamano final
 string p1;																				//	
-string resultado="/home/fepi12/Documents/resultado";
-string resultados="/home/fepi12/Documents/resultados";
+string resultado="/home/administrador/Documents/resultado";
+string resultados="/home/administrador/Documents/resultados";
 
 
 
@@ -129,6 +129,7 @@ void cargasprites()
 {
 		buffer=create_bitmap(sizescreen_x,sizescreen_y);								//Creacion de espacio de pantalla
 		//CARGA DE SPRITES
+		errorcopia = load_bitmap("error.bmp",NULL);								//^
 		fondo = load_bitmap("fondo.bmp",NULL);											//^
 		duplicador = load_bitmap("duplicador.bmp",NULL);								//^
 		press = load_bitmap("press.bmp",NULL);											//^
@@ -415,6 +416,68 @@ void ObtenerTamanoUSB()
 	system(cstr2);
 }
 
+bool RevisarError()																		//revisa si la memoria fue removida antes de comezar la copia
+{
+	FILE *doc;
+	char varaux[500];
+	
+	comando = dirbase+ls+dirusbs+destino+Documentos+dir1+usbconectadas;					//Usando el comando ls de linux, se crea un archivo donde se guarda el nombre de los dispositivos USB conectados(aparecen dentro del directorio /media/ususario/), el archivo se guarda en  la direccion luego del simbolo >
+	char *cstr1 = new char[comando.length() + 1];
+	strcpy(cstr1, comando.c_str());
+	system(cstr1);																				
+	
+	
+	comando = Documentos+dir1+usbconectadas;
+	char *cstr2 = new char[comando.length() + 1];
+	strcpy(cstr2, comando.c_str());
+	doc = fopen(cstr2,"r");																//abre el archivo desde la direccion
+	
+		system(cstr1);																	//refresca los dato del directorio de las usb conectadas
+		fseek( doc, 0, SEEK_END );														//posiciona el cursor al final de archivo
+		if (ftell( doc ) == 0 )															//si es 0 esta vacio el archivo-no usb conectadas
+		{	
+			draw_sprite(buffer,fondo,0,0);												//imprime fondo
+			draw_sprite(buffer,errorcopia,150,50);										//imprime mensaje de error
+			draw_sprite(buffer,press,150,200);											//imprime mensaje de presione enter
+			pantalla();																	//se muestra en pantalla
+			while(true)																	//espera enter por el usuario
+				{
+					
+					//for (;;)
+					//	{
+					//	digitalWrite (LED, HIGH) ;	    								// se enciende el led
+					//	delay (500) ;		            								// se mantiene la acciòn del led encendido por 500 ms
+					//	digitalWrite (LED, LOW) ;	    								// se apaga el led
+					//	delay (500) ;                   								// se mantiene la acciòn del led encendido por 500 ms
+					//	}
+					char tecla0= readkey() >> 8;
+					if(tecla0==KEY_ENTER)
+					{
+						comando = rm+Documentos+dir1+bufferm;							//se eliminan archivos
+						char *cstr2 = new char[comando.length() + 1];
+						strcpy(cstr2, comando.c_str());
+						system(cstr2);
+						
+						comando = rm+Documentos+"/Proyecto_3";
+						char *cstr7 = new char[comando.length() + 1];					//se elimina carpeta
+						strcpy(cstr7, comando.c_str());
+						system(cstr7);
+												
+					//	digitalWrite (LED, LOW);        								// se apaga el led
+						return true;
+					}
+					else
+					{
+						//return false;
+					}
+				}
+			}
+		else 
+		{
+			return false;
+		}	
+	}
+
 bool CompararTamano()
 {
 	FILE* tama;
@@ -672,7 +735,7 @@ int main()
 		draw_sprite(buffer,duplicador,50,50);												//imprime mensaje de duplicador usb
 		draw_sprite(buffer,press,150,200);													//imprime mensaje de presione enter
 		pantalla();																			//se muestra en pantalla
-		system("mkdir /home/fepi12/Documents/Proyecto_3");
+		system("mkdir /home/administrator/Documents/Proyecto_3");
 		
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		while(true)																			//espera enter por el usuario
@@ -823,6 +886,12 @@ int main()
 while(true)																							//Espera Enter para salir
 {
 		char tecla1= readkey() >> 8;
+		
+		RevisarError();																		//funcion de revision de error
+		if (true)																			//si es verdadero salta al final y cierra el programa
+			{
+				goto end;
+			}
 	
 	if(tecla1==KEY_T)
 	{
@@ -1553,7 +1622,7 @@ while(true)																							//Espera Enter para salir
 	
 	
 }
-          allegro_exit();
+end:	allegro_exit();
 		return 0;
 }
 END_OF_MAIN()
