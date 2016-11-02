@@ -7,6 +7,9 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+//#include <wiringPi.h>
+#define	LED	22
+
 
 
 
@@ -17,12 +20,10 @@ using namespace std;
 FILE *archer;																			//puntero a archivo con el nombre de los archivos del usb fuente
 FILE *docaux;																			//puntero auxuliar para saber si es directorio o archivo
 char aux[100];																			//
-char varusb[60];
-
-																		//variable del nombre del dispositivo de almacenamiento usb fuente
-string dirbase("cd /home/administrator && ");													//ruta a directorios base
-string dirusbs("/media/administrator/");														//ruta a directorio de los dispositivos usb conectados
-string dirusb0("cd /administrator/");														//ruta a directorio de los dispositivos usb conectados
+char varusb[60];																		//variable del nombre del dispositivo de almacenamiento usb fuente
+string dirbase("cd /home/fepi12 && ");														//ruta a directorios base
+string dirusbs("/media/fepi12/");															//ruta a directorio de los dispositivos usb conectados
+string dirusb0("cd /media/fepi12/");														//ruta a directorio de los dispositivos usb conectados
 string ls(" ls ");																		//comando para ver archivos del directorio en que se este dentro
 string dir1("/Proyecto_3");																//directorio de archivos para el proyecto*** Carpeta necesaria dentro de documentos
 string comando;																			//variable de comando de ejecucion 
@@ -30,7 +31,7 @@ string usbconectadas("/usbconectadas");													//nombre de archivo con nomb
 string archivofuente("/archivosfuente");												//nombre de archivo con nombre de archivos dentro del usb fuente
 string archivoARCDIR("/arcdir");														//nombre de archivo donde se determina si es archivo o directorio
 string destino(">");																	//signo de comando para crear un archivo
-string Documentos("/home/administrator/Documents");											//ruta a directorio de documentos
+string Documentos("/home/fepi12/Documents");												//ruta a directorio de documentos
 
 string file("file ");																	//comando para buscar archivo
 string cp(" cp -r ");																	//Comando para copiar archivos
@@ -64,11 +65,11 @@ BITMAP *removeusb;																		//variable para guardar imagen de remover us
 BITMAP *copialista;																		//variable para guardar imagen de copia lista	
 BITMAP *borrarusbd;																		//variable para guardar imagen de borrar archivos de sub 	
 BITMAP *crearcarpeta;																	//variable para guardar imagen de crear carpeta en usb
+BITMAP *noespacio;																		//variable para guardar imagen de no espacio
 BITMAP *usbd;																			//variable para guardar imagen de esperando usb destino
 BITMAP *caja;																			//variable para guardar imagen de caja para seleccion
 BITMAP *sobrecaja;																		//variable para guardar imagen de sobre caja en seleccion
 BITMAP *marcacaja;																		//variable para guardar imagen de marca caja en seleccion
-BITMAP *errorcopia;																		//variable para guardar imagen de error al copiar
 
 
 int x=0;
@@ -76,6 +77,32 @@ int sizescreen_x=700;																	//tamano horizontal de la ventana de juego
 int sizescreen_y=300;																	//Tamano vertical de la ventana de juego
 
 int scroll=0;																			//variable para subir o bajar a traves de la lista
+/////////
+
+
+string du (" du -sh "); 																//comando para verificar tamano carpeta
+string des ("> ");																		//guardar resultado en un archivo de texto
+string df("df -h "); 																	//comando para obtener tamano de usb
+
+float x1;																				//
+float x2;																				//
+float y;																				//
+float espacio;																			//
+int k = 1000;																			//valor para kilo bytes
+int m = 1000000;																			//valor para mega bytes
+int g = 1000000000;																		//valor para giga bytes
+string a=".";																			//
+string b= ",";																			//string para detectar puntos
+string M = "M";																			//string para detectar M
+string K = "K";																			//string para detectar K
+string G = "G";																			//string para detectar G
+string num;																				//
+//string num2;																			//variable donde se guarda tamano final
+string p1;																				//	
+string resultado="/home/fepi12/Documents/resultado";
+string resultados="/home/fepi12/Documents/resultados";
+
+
 
 ///////////////----------FUNCIONES-----------////////////////
 
@@ -101,26 +128,26 @@ void init_allegro()																		//Funcion de inicializacion de la libreria 
 void cargasprites()
 {
 		buffer=create_bitmap(sizescreen_x,sizescreen_y);								//Creacion de espacio de pantalla
-																						//CARGA DE SPRITES
-		errorcopia = load_bitmap("errorcopia.bmp",NULL);								//^
+		//CARGA DE SPRITES
 		fondo = load_bitmap("fondo.bmp",NULL);											//^
 		duplicador = load_bitmap("duplicador.bmp",NULL);								//^
 		press = load_bitmap("press.bmp",NULL);											//^
 		usbs = load_bitmap("usbs.bmp",NULL);											//^
-		caja = load_bitmap("caja.bmp",NULL);											//^
-		sobrecaja = load_bitmap("sobrecaja.bmp",NULL);									//^
-		marcacaja = load_bitmap("marcacaja.bmp",NULL);									//^
-		presscopiat = load_bitmap("presscopiat.bmp",NULL);								//^
-		pressselect = load_bitmap("pressseleccion.bmp",NULL);							//^
-		presscancel = load_bitmap("cancelar.bmp",NULL);									//^
-		copiaproceso = load_bitmap("copiaproceso.bmp",NULL);							//^
-		noremoveusb = load_bitmap("noremoveusb.bmp",NULL);								//^
-		usbd = load_bitmap("usbd.bmp",NULL);											//^
+		caja= load_bitmap("caja.bmp",NULL);												//^
+		sobrecaja= load_bitmap("sobrecaja.bmp",NULL);									//^
+		marcacaja= load_bitmap("marcacaja.bmp",NULL);									//^
+		presscopiat= load_bitmap("presscopiat.bmp",NULL);								//^
+		pressselect= load_bitmap("pressseleccion.bmp",NULL);							//^
+		presscancel= load_bitmap("cancelar.bmp",NULL);									//^
+		copiaproceso= load_bitmap("copiaproceso.bmp",NULL);								//^
+		noremoveusb= load_bitmap("noremoveusb.bmp",NULL);								//^
+		usbd= load_bitmap("usbd.bmp",NULL);												//^
 		removeusb = load_bitmap("removeusb.bmp",NULL);									//^
 		copialista = load_bitmap("copialista.bmp",NULL);								//^
 		borrarusbd = load_bitmap("borrarusbd.bmp",NULL);								//^
 		crearcarpeta = load_bitmap("crearcarpeta.bmp",NULL);							//^
-        
+		noespacio = load_bitmap("noespacio.bmp",NULL);							//^
+        		
 }
 
 void DetectarUSBFuente(char *var)
@@ -346,6 +373,17 @@ void borrar()
 	char *cstr6 = new char[comando.length() + 1];
 	strcpy(cstr6, comando.c_str());
 	system(cstr6);
+	
+	comando = rm+Documentos+"/Proyecto_3";
+	char *cstr7 = new char[comando.length() + 1];
+	strcpy(cstr7, comando.c_str());
+	system(cstr7);
+	
+	
+	
+	
+	
+	
 }
 
 void CopiarTodo()
@@ -358,53 +396,262 @@ void CopiarTodo()
 	
 	
 }
-void RevisarError(int err)																//revisa si la memoria fue removida antes de comezar la copia
+
+
+void ObtenerTamanoCarpeta()
 {
-	FILE *doc;
-	char varaux[500];
-	
-	comando = dirbase+ls+dirusbs+destino+Documentos+dir1+usbconectadas;					//Usando el comando ls de linux, se crea un archivo donde se guarda el nombre de los dispositivos USB conectados(aparecen dentro del directorio /media/ususario/), el archivo se guarda en  la direccion luego del simbolo >
-	char *cstr1 = new char[comando.length() + 1];
-	strcpy(cstr1, comando.c_str());
-	system(cstr1);																				
-	
-	
-	comando = Documentos+dir1+usbconectadas;
+	comando = du+Documentos+dir1+"/Copia"+destino+resultado;
+	//comando = du+"/home"+destino+resultado;
 	char *cstr2 = new char[comando.length() + 1];
 	strcpy(cstr2, comando.c_str());
-	doc = fopen(cstr2,"r");																//abre el archivo desde la direccion
+	system(cstr2);
+}
+
+void ObtenerTamanoUSB()
+{
+	comando = df+"\""+dirusbs+varusb+"\""+des+resultados;
+	char *cstr2 = new char[comando.length() + 1];
+	strcpy(cstr2, comando.c_str());
+	system(cstr2);
+}
+
+bool CompararTamano()
+{
+	FILE* tama;
+	char taman[100];
+	char ta[100];
+	char letra[100];
+	char taman1[100];
+	char ta1[100];
+	char letra11[100];
+	char ver1[100];
+	string pez;
+	string numero;
+	string num;
+	string comando2=resultado;																			//creacion de comando para abrir archivo que contiene el path 
 	
-	while(true)																			//entra en el ciclo infinito de comprobacion
-	{	
-		system(cstr1);																	//refresca los dato del directorio de las usb conectadas
-		fseek( doc, 0, SEEK_END );														//posiciona el cursor al final de archivo
-		if (ftell( doc ) == 0 )															//si es 0 esta vacio el archivo-no usb conectadas
-		{	
-			draw_sprite(buffer,fondo,0,0);														//imprime fondo
-			draw_sprite(buffer,errorcopia,150,50);												//imprime mensaje de error
-			draw_sprite(buffer,press,150,200);													//imprime mensaje de presione enter
-			pantalla();																			//se muestra en pantalla
-			while(true)																			//espera enter por el usuario
-				{
-					char tecla0= readkey() >> 8;
-					if(tecla0==KEY_ENTER)
-					{
-						err = 1;
-						comando = rm+Documentos+dir1+bufferm;
-						char *cstr2 = new char[comando.length() + 1];
-						strcpy(cstr2, comando.c_str());
-						system(cstr2);
-						break;
-					}
-					else
-					{
-					err = 0;
-					break;
-					}
-				}
-			}
-		else {break;}	
+	
+	char *cstr13 = new char[comando2.length() + 1];															//creacion del puntero char para almacenar comando
+	strcpy(cstr13, comando2.c_str());	
+	tama=fopen(cstr13,"r");	
+	
+	fscanf(tama,"%s",ver1);
+	rewind(tama);
+  
+    p1=ver1;																				////ejecucion del comando
+	fscanf(tama,"%[^,]",taman1);
+	fscanf(tama,"%[^0-9]",ta1);	
+	fscanf(tama,"%[^A-Z]",ta1);
+	fscanf(tama,"%s",letra11);
+	pez=taman1+b;
+	
+	pez=pez+ta1+letra11;
+	num=pez;
+	
+	char checho[100];
+	strcpy(checho, num.c_str());
+	rewind(tama);
+	
+	fscanf(tama,"%[^,]",taman);
+	fscanf(tama,"%[^0-9]",ta);	
+	fscanf(tama,"%[^A-Z]",ta);
+	fscanf(tama,"%s",letra);
+	numero=taman+a;
+	numero=numero+ta;
+	
+	if (pez==ver1){
+		
+	char *cstr1 = new char[numero.length() + 1];
+	strcpy(cstr1, numero.c_str());
+	x1= atof(cstr1);
+	if (letra ==K){
+		x1=x1*k;
 	}
+	else if (letra ==M){
+		x1=x1*m;
+	}
+	else if (letra ==G){
+		x1=x1*g;
+	}
+	
+	} 
+	
+	
+	else{
+	rewind (tama);	
+	fscanf(tama,"%[^0-9]",ta);	
+	fscanf(tama,"%[^A-Z]",ta);
+	fscanf(tama,"%s",letra);
+	numero=numero+ta;	
+	char *cstr1 = new char[numero.length() + 1];
+	strcpy(cstr1, numero.c_str());
+	x1= atof(cstr1);
+	if (letra ==K){
+		x1=x1*k;
+	}
+	else if (letra ==M){
+		x1=x1*m;
+	}
+	else if (letra ==G){
+		x1=x1*g;
+	}
+
+	}
+	
+	
+	fclose(tama); 
+	
+	//-------------------------Obtencion del tamaño disponible en la memoria externa--------------------------------------------------	
+	
+	FILE* tamano;
+	char ver2[100];
+	char ver3[100];
+	char numeroc1[100];
+	char num11[100];
+	char num112[100];
+	char letra111[100];
+	char numero2[100];
+	char numero2_1[100];
+	char letra2[100];
+	string num2;
+	string comando3;
+	comando3=resultados;																			
+	char *cstr12 = new char[comando3.length() + 1];															
+	strcpy(cstr12, comando3.c_str());	
+	
+	tamano=fopen(cstr12,"r");	
+	
+	fscanf(tamano,"%[^\n]\n",ver2);
+	fscanf(tamano,"%s",ver2);
+	fscanf(tamano,"%s",ver2);
+	//printf("%s\n",ver2);
+	string veri;
+	veri=ver2;
+	rewind(tamano);		
+	
+	//--------------------considerando el total con ,---------------------
+	fscanf(tamano,"%[^\n]\n",num11);
+	fscanf(tamano,"%s",num11);
+	fscanf(tamano,"%[^0-9]",num11);
+	fscanf(tamano,"%[^,]",num11);
+	fscanf(tamano,"%[^0-9]",num112);
+	fscanf(tamano,"%[^A-Z]",num112);
+	fscanf(tamano,"%s",letra111);					
+	string num2_1;
+	num2_1=num11+b+num112+letra111;
+	
+	//printf ("%s \n",num11);
+	//printf ("%s \n",num112);
+	
+	if (num2_1==veri){
+		//printf("caso 1 \n");
+		num2_1=num11+a+num112;
+		strcpy(numeroc1, num2_1.c_str());
+		//printf ("%s \n",numeroc1);
+
+		x2= atof(numeroc1);
+		
+		//printf ("%f \n", x2);
+		
+		}
+//------------------------- para el tamaño sin coma----------------------------		
+	else
+	{
+	
+		rewind (tamano);																			
+		fscanf(tamano,"%[^\n]\n",numeroc1);
+		fscanf(tamano,"%s",numeroc1);
+		fscanf(tamano,"%[^0-9]",numeroc1);
+		fscanf(tamano,"%[^A-Z]",numeroc1);	
+		fscanf(tamano,"%s",letra111);
+		
+		x2= atof(numeroc1);
+	
+	}
+	
+	if (letra111 ==K){
+		x2=x2*k;
+	}
+	else if (letra111 ==M){
+		x2=x2*m;
+	}
+	else if (letra111 ==G){
+		x2=x2*g;
+	}
+	
+	
+//-------------------------------numero dos con coma-----------------------------
+	
+	
+	fscanf(tamano,"%s",ver3);
+	string nume2=ver3;
+	
+	rewind(tamano);
+	fscanf(tamano,"%[^\n]\n",numero2);
+	fscanf(tamano,"%s",numero2);
+	fscanf(tamano,"%s",numero2);
+    fscanf(tamano,"%[^0-9]",numero2);
+    fscanf(tamano,"%[^,]",numero2);
+    fscanf(tamano,"%[^0-9]",numero2_1);	
+	fscanf(tamano,"%[^A-Z]",numero2_1);
+	fscanf(tamano,"%s",letra2);;
+	string nume21=numero2+b+numero2_1+letra2;
+	char *numeroc2 = new char[nume21.length() + 1];
+	strcpy(numeroc2, nume21.c_str());
+	
+	
+	if (nume21==nume2){
+	//printf("caso11");
+	string nume21=numero2+a+numero2_1+letra2;
+	char *numeroc2 = new char[nume21.length() + 1];
+	strcpy(numeroc2, nume21.c_str());
+	y= atof(numeroc2);
+		}
+		
+	else{
+  
+	rewind(tamano);
+	fscanf(tamano,"%[^\n]\n",numero2);
+	fscanf(tamano,"%s",numero2); 
+	fscanf(tamano,"%s",numero2);
+	fscanf(tamano,"%[^0-9]",numero2);
+	fscanf(tamano,"%[^A-Z]",numero2);
+	fscanf(tamano,"%s",letra2);
+    num2=numero2+a;
+    char *numeroc2 = new char[num2.length() + 1];
+	strcpy(numeroc2, num2.c_str());
+    	
+
+	y= atof(numeroc2);
+		
+		
+		}
+
+	if (letra2 ==K){
+		y=y*k;
+	}
+	else if (letra2 ==M){
+		y=y*m;
+	}
+	else if (letra2 ==G){
+		y=y*g;
+	}
+	
+	espacio = x2-y;
+	
+	//printf("%f \n",x1);
+	//printf("%f \n", x2);
+	//printf("%f \n", y);
+	//printf("%f \n",espacio);
+
+	if (espacio>x1){
+		
+		fclose(tamano); 
+		return true;
+	}
+	
+		fclose(tamano); 
+		return false;
 }
 
 
@@ -415,16 +662,17 @@ void RevisarError(int err)																//revisa si la memoria fue removida an
 int s=0;																					//variable que controla desplazamiento de la lista en la pantalla
 
 int main() 
-{
+{ 
 		init_allegro();
-		cargasprites();     
-		
-		//Muestra la primera parte del programa
+		cargasprites();
+		 //wiringPiSetupGpio () ;
+         //pinMode (LED, OUTPUT);  
+         //Muestra la primera parte del programa
 		draw_sprite(buffer,fondo,0,0);														//imprime fondo
 		draw_sprite(buffer,duplicador,50,50);												//imprime mensaje de duplicador usb
 		draw_sprite(buffer,press,150,200);													//imprime mensaje de presione enter
 		pantalla();																			//se muestra en pantalla
-		
+		system("mkdir /home/fepi12/Documents/Proyecto_3");
 		
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		while(true)																			//espera enter por el usuario
@@ -480,13 +728,13 @@ int main()
 		draw_sprite(buffer,noremoveusb,150,160);											//imprime mensaje de no remover usb
 		
 		pantalla();
-		
+		//digitalWrite(LED,HIGH);						
 		for(int i=0;i<numarchivos;i++)
 		{
 			CopiarArchivos(ListaNombresArchivos[i]);										//Se copia elemento por elemento del usb fuente en el buffer de memoria
 			LeerCarpeta(ListaNombresArchivos[i]);											//Si algun elemento es carpeta, se actualizan contenidos en la lista
 		}
-		
+		//digitalWrite(LED,LOW);
 		
 		numanterior=numarchivos;															//numeroanterior representa elementos que ya fueron revisados 
 		numarchivos=0;																		//Se reinicia variable para contar elementos actuales cargados
@@ -575,19 +823,13 @@ int main()
 while(true)																							//Espera Enter para salir
 {
 		char tecla1= readkey() >> 8;
-		int status;																					//bandera de memoria removida
-		RevisarError(status);																		//funcion de revicion de error
-		if (status == 1)																			//si es verdadero salta al final y cierra el programa
-			{
-				goto end;
-			}
-		
-		
-		if(tecla1==KEY_T)
-		{
+	
+	if(tecla1==KEY_T)
+	{
 			DirectorioSeleccion();																				//Creacarpeta de copia 
 			CopiarTodo();																						//En la carpeta copia guarda todos los archivos
 		
+			insertallavedestinoT:
 			clear(buffer);																						//limpia pantalla
 			draw_sprite(buffer,fondo,0,0);																		//imprime fondo
 			draw_sprite(buffer,press,150,200);																	//imprime mensaje de presione entrer
@@ -604,7 +846,7 @@ while(true)																							//Espera Enter para salir
 					break;
 				}
 			}
-		
+			
 		
 			clear(buffer);																						//limpia pantalla
 			draw_sprite(buffer,fondo,0,0);																		//imprime fondo
@@ -614,18 +856,108 @@ while(true)																							//Espera Enter para salir
 		
 			DetectarUSBFuente(varusb);																			//Funcion que detecta nueva llave
 			sleep(1);
-			
+			 
 			clear(buffer);																						//limpia buffer de pantalla
 			draw_sprite(buffer,fondo,0,0);																		//imprime fondo
 			draw_sprite(buffer,borrarusbd,1,100);																//imprime mensaje de opcion de borrar elementos del usb destino
 			draw_sprite(buffer,crearcarpeta,1,150);																//imprime mensaje de opcion de crear carpeta en el usb destino con los elementos a copiar	
+			draw_sprite(buffer,presscancel,1,200);
+			textout_ex(buffer,font, varusb, 400, 30, makecol(0,0,255), -1);																//imprime mensaje de presione c para cancelar
 			pantalla();																							//muestra en pantalla
 			while(true)																							//ciclo para escoger si eleminar elementos y copiar o crear carpeta y copiar
 			{
 				char t= readkey() >> 8;
 				if(t==KEY_B)
 				{
-																												//funcion para eliminar elementos del del usb destino
+					comando=dirbase+ls+dirusbs+varusb+destino+Documentos+"/Proyecto_3"+"/S";						//Se crea comando para guardar en la ruta de documentos/Prpyecto_3 el archivo con el nombre de los archivos contenidos dentro del usb
+					strcpy(cstr, comando.c_str());
+					system(cstr);																					//Se ejecuta el comando
+		
+					comando = Documentos+"/Proyecto_3"+"/S";														//Se busca la ruta hacia el archivo con los nombres de los archivos del usb
+					strcpy(cstr, comando.c_str());
+					archer = fopen(cstr,"r");																		//abre el archivo desde la direccion
+   		   			int c=0;																		
+					while(!feof(archer))																			//ciclo hasta encontrar el final de linea
+					{	
+						c++;																						//Cantidad de lineas leidas
+						fscanf(archer,"%[^\n]\n",aux);																//se lee el archivo linea por linea
+		
+					}
+					rewind(archer);																					//se rebobina el archivo y se coloca el cursor al inicio
+					Lista ListaNivel1[c]; 																			//se crea una lista del tamano de archivos del usb 
+		
+	
+					int j=0;																										
+					while(!feof(archer))																			//ciclo hasta encontrar el final de linea
+					{	
+						fscanf(archer,"%[^\n]\n",ListaNivel1[j]);													//Se guarda en la lista los nombres de los archivos del usb fuente
+						j++;		
+					}
+					fclose(archer);
+		
+		
+					for(int i=0;i<c;i++)
+					{
+						comando = "rm -rf "+dirusbs+varusb+"/"+"\""+ListaNivel1[i]+"\"";										//Usando el comando rm de linux, se borran los archivos con la direccion del path suministrada
+						char *cstr1 = new char[comando.length() + 1];
+						strcpy(cstr1, comando.c_str());
+						system(cstr1);																				//ejecuta comando
+					}																							
+					
+					
+		
+					ObtenerTamanoCarpeta();
+					ObtenerTamanoUSB();
+					
+					if(CompararTamano())
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo
+						draw_sprite(buffer,copiaproceso,150,130);																	//imprime mensaje de copia en proceso
+						draw_sprite(buffer,noremoveusb,150,160);																	//imprime mensaje de no remover usb
+						pantalla();
+						
+						//digitalWrite(LED,HIGH);
+						CopiarADestino(varusb);																						//Funcion de transferencia de datos al usb destino
+						//digitalWrite(LED,LOW);
+						
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo			
+						draw_sprite(buffer,copialista,190,120);																		//imprime imagen de copia lista		
+						draw_sprite(buffer,press,150,200);																			//imprime imagen de presione enter
+						pantalla ();
+						
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						
+						
+					}
+		
+					else
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);	
+						draw_sprite(buffer,noespacio,150,130);	
+						draw_sprite(buffer,press,150,200);	
+						pantalla();
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						goto insertallavedestinoT;
+												
+					}
+			
 					
 					
 					break;
@@ -633,39 +965,74 @@ while(true)																							//Espera Enter para salir
 				
 				if(t==KEY_N)
 				{
-										
+					
+					
+					ObtenerTamanoCarpeta();
+					ObtenerTamanoUSB();
+					
+					if(CompararTamano())
+					{
+					
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo
+						draw_sprite(buffer,copiaproceso,150,130);																	//imprime mensaje de copia en proceso
+						draw_sprite(buffer,noremoveusb,150,160);																	//imprime mensaje de no remover usb
+						pantalla();
+						
+						//digitalWrite(LED,HIGH);
+						CopiarADestino(varusb);																						//Funcion de transferencia de datos al usb destino
+						//digitalWrite(LED,LOW);
+				
+					
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo			
+						draw_sprite(buffer,copialista,190,120);																		//imprime imagen de copia lista		
+						draw_sprite(buffer,press,150,200);																			//imprime imagen de presione enter
+						pantalla ();
+					
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+					}
+					
+					else
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);	
+						draw_sprite(buffer,noespacio,150,130);	
+						draw_sprite(buffer,press,150,200);	
+						pantalla();
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						goto insertallavedestinoT;
+												
+					}
+					
+					
+							
+					break;
+				}
+				
+				if(t==KEY_C)
+				{
+					
 					break;
 				}
 				
 			}
 			
 			
-			
-			
-			clear(buffer);																						//limpia buffer de pantalla
-			draw_sprite(buffer,fondo,0,0);																		//imprime fondo
-			draw_sprite(buffer,copiaproceso,150,130);															//imprime mensaje de copia en proceso
-			draw_sprite(buffer,noremoveusb,150,160);															//imprime mensaje de no remover usb
-			pantalla();
-		
-			CopiarADestino(varusb);																				//Funcion de transferencia de datos al usb destino
-		
-			clear(buffer);																						//limpia buffer de pantalla
-			draw_sprite(buffer,fondo,0,0);																		//imprime fondo			
-			draw_sprite(buffer,copialista,190,120);																//imprime imagen de copia lista		
-			draw_sprite(buffer,press,150,200);																	//imprime imagen de presione enter
-			pantalla ();
-			
-			
-			while(true)																							//Espera Enter para salir
-			{
-				char tecla1= readkey() >> 8;
-				if(tecla1==KEY_ENTER)
-				{
-					break;
-				}
-			}
-		
 			borrar();																							//borra archivos y carpetas 		
 		
 		
@@ -686,12 +1053,7 @@ while(true)																							//Espera Enter para salir
 	{
 
 
-		/*	SECCION DEL CODIGO PARA COPIAR LA SELECCION DE ARCHIVOS A LA CARPETA COPIASELECCION 
-		* Agregar funcion de espera de usb destino
-		* Funcion de comparacion de tamanos
-		* Realizar copia
-	
-		*/
+		
 		clear(buffer);
 		draw_sprite(buffer,fondo,0,0);
 		textprintf_ex(buffer, font, 500, 30, makecol(255, 0, 0),-1, "# elementos: %d", numarchivos);				//Imprime la cantidad de archivos
@@ -699,7 +1061,28 @@ while(true)																							//Espera Enter para salir
 		textout_ex(buffer,font, varusb, 400, 30, makecol(0,255,0), -1);												//Imprime nombre del usb conectado
 /////////////////////////////////////////////////////////////////////////////////////////////////////		
 //IMPRIME LA LISTA DE ARCHIVOS		
-		for(int i=0;i<numarchivos;i++)																				//ciclo para mostrar el nombre de los archivos almacenados en la lista
+		
+		if(numarchivos<20)
+		{
+			for(int i=0;i<numarchivos;i++)																				//ciclo para mostrar el nombre de los archivos almacenados en la lista
+			{
+					if(ArchivoODirectorio(ListaNombresArchivos[i]))													//comprueba si es un archivo o un directorio
+					{
+						textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+2, makecol(0,0,0), -1);	//si es archivo solamente imprime el nombre
+						draw_sprite(buffer,caja,77, (i)*15+1);						
+					}	
+					else
+					{
+						textout_ex(buffer,font,ListaNombresArchivos[i] , 100, (i)*15+2, makecol(0,255,0), -1);	//imprime el nombre del directorio
+						textout_ex(buffer,font,"*" , 90, (i)*15+2, makecol(0,0,0), -1);							//coloca un asterisco para diferenciar las carpetas
+						draw_sprite(buffer,caja,77, (i)*15+1);	
+					}
+			}
+		}
+		
+		else
+		{
+			for(int i=0;i<20;i++)																				//ciclo para mostrar el nombre de los archivos almacenados en la lista
 				{
 					
 					if(ArchivoODirectorio(ListaNombresArchivos[i]))													//comprueba si es un archivo o un directorio
@@ -715,6 +1098,8 @@ while(true)																							//Espera Enter para salir
 							draw_sprite(buffer,caja,77, (i)*15+1);	
 						}
 				}
+		}
+		
 		draw_sprite(buffer,sobrecaja,77,1);	
 		pantalla();
 		
@@ -731,7 +1116,7 @@ while(true)																							//Espera Enter para salir
 			char tecla= readkey() >> 8;																				//espera teclaso del usuario
 			
 			
-			if(tecla==KEY_ESC)																						//Si se presiona ESC se termina la seleccion de archivos
+			if(tecla==KEY_ENTER)																						//Si se presiona ESC se termina la seleccion de archivos
 			{
 				break;																								//rompe ciclo de esciger archivos
 				
@@ -951,7 +1336,8 @@ while(true)																							//Espera Enter para salir
 				if(ListaCopia[i]) CopiarSeleccionados(ListaNombresArchivos[i]);											//Si el estado es true ese elemento fue seleccionado y se permite la copia
 			}
 					
-					
+			
+			insertallavedestinoS:		
 			clear(buffer);																								//limpia pantalla
 			draw_sprite(buffer,fondo,0,0);																				//imprime fondo
 			draw_sprite(buffer,press,150,200);																			//imprime mensaje de presione entrer
@@ -975,17 +1361,104 @@ while(true)																							//Espera Enter para salir
 			DetectarUSBFuente(varusb);																					//Funcion que detecta nueva llave
 			sleep(1);
 			
-			clear(buffer);																						//limpia buffer de pantalla
-			draw_sprite(buffer,fondo,0,0);																		//imprime fondo
-			draw_sprite(buffer,borrarusbd,1,100);																//imprime mensaje de opcion de borrar elementos del usb destino
-			draw_sprite(buffer,crearcarpeta,1,150);																//imprime mensaje de opcion de crear carpeta en el usb destino con los elementos a copiar	
-			pantalla();																							//muestra en pantalla
-			while(true)																							//ciclo para escoger si eleminar elementos y copiar o crear carpeta y copiar
+			clear(buffer);																								//limpia buffer de pantalla
+			draw_sprite(buffer,fondo,0,0);																				//imprime fondo
+			draw_sprite(buffer,borrarusbd,1,100);																		//imprime mensaje de opcion de borrar elementos del usb destino
+			draw_sprite(buffer,crearcarpeta,1,150);																		//imprime mensaje de opcion de crear carpeta en el usb destino con los elementos a copiar	
+			draw_sprite(buffer,presscancel,1,200);																		//imprime mensaje de presione c para cancelar
+			pantalla();																									//muestra en pantalla
+			
+			while(true)																									//ciclo para escoger si eleminar elementos y copiar o crear carpeta y copiar
 			{
 				char t= readkey() >> 8;
 				if(t==KEY_B)
 				{
-																												//funcion para eliminar elementos del del usb destino
+					comando=dirbase+ls+dirusbs+varusb+destino+Documentos+"/Proyecto_3"+"/S";						//Se crea comando para guardar en la ruta de documentos/Prpyecto_3 el archivo con el nombre de los archivos contenidos dentro del usb
+					strcpy(cstr, comando.c_str());
+					system(cstr);																					//Se ejecuta el comando
+		
+					comando = Documentos+"/Proyecto_3"+"/S";														//Se busca la ruta hacia el archivo con los nombres de los archivos del usb
+					strcpy(cstr, comando.c_str());
+					archer = fopen(cstr,"r");																		//abre el archivo desde la direccion
+   		   			int c=0;																		
+					while(!feof(archer))																			//ciclo hasta encontrar el final de linea
+					{	
+						c++;																						//Cantidad de lineas leidas
+						fscanf(archer,"%[^\n]\n",aux);																//se lee el archivo linea por linea
+		
+					}
+					rewind(archer);																					//se rebobina el archivo y se coloca el cursor al inicio
+					Lista ListaNivel1[c]; 																			//se crea una lista del tamano de archivos del usb 
+		
+	
+					int j=0;																										
+					while(!feof(archer))																			//ciclo hasta encontrar el final de linea
+					{	
+						fscanf(archer,"%[^\n]\n",ListaNivel1[j]);													//Se guarda en la lista los nombres de los archivos del usb fuente
+						j++;		
+					}
+					fclose(archer);
+		
+		
+					for(int i=0;i<c;i++)
+					{
+						comando = "rm -rf "+dirusbs+varusb+"/"+"\""+ListaNivel1[i]+"\"";										//Usando el comando rm de linux, se borran los archivos con la direccion del path suministrada
+						char *cstr1 = new char[comando.length() + 1];
+						strcpy(cstr1, comando.c_str());
+						system(cstr1);																				//ejecuta comando
+					}																							
+					
+					ObtenerTamanoCarpeta();
+					ObtenerTamanoUSB();
+					
+					if(CompararTamano())
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo
+						draw_sprite(buffer,copiaproceso,150,130);																	//imprime mensaje de copia en proceso
+						draw_sprite(buffer,noremoveusb,150,160);																	//imprime mensaje de no remover usb
+						pantalla();
+						
+						//digitalWrite(LED,HIGH);
+						CopiarADestino(varusb);																						//Funcion de transferencia de datos al usb destino
+						//digitalWrite(LED,LOW);
+						
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo			
+						draw_sprite(buffer,copialista,190,120);																		//imprime imagen de copia lista		
+						draw_sprite(buffer,press,150,200);																			//imprime imagen de presione enter
+						pantalla ();
+						
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						
+						
+					}
+		
+					else
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);	
+						draw_sprite(buffer,noespacio,150,130);	
+						draw_sprite(buffer,press,150,200);	
+						pantalla();
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						goto insertallavedestinoS;
+												
+					}
 					
 					
 					break;
@@ -993,7 +1466,64 @@ while(true)																							//Espera Enter para salir
 				
 				if(t==KEY_N)
 				{
-										
+					ObtenerTamanoCarpeta();
+					ObtenerTamanoUSB();
+					
+					if(CompararTamano())
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo
+						draw_sprite(buffer,copiaproceso,150,130);																	//imprime mensaje de copia en proceso
+						draw_sprite(buffer,noremoveusb,150,160);																	//imprime mensaje de no remover usb
+						pantalla();
+						
+						//digitalWrite(LED,HIGH);
+						CopiarADestino(varusb);																						//Funcion de transferencia de datos al usb destino
+						//digitalWrite(LED,LOW);
+						
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);																				//imprime fondo			
+						draw_sprite(buffer,copialista,190,120);																		//imprime imagen de copia lista		
+						draw_sprite(buffer,press,150,200);																			//imprime imagen de presione enter
+						pantalla ();
+						
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						
+						
+					}
+		
+					else
+					{
+						clear(buffer);																								//limpia buffer de pantalla
+						draw_sprite(buffer,fondo,0,0);	
+						draw_sprite(buffer,noespacio,150,130);	
+						draw_sprite(buffer,press,150,200);	
+						pantalla();
+						while(true)																									//Espera Enter para salir
+						{
+							char tecla1= readkey() >> 8;
+							if(tecla1==KEY_ENTER)
+							{
+								break;
+							}
+						}
+						goto insertallavedestinoS;
+												
+					}
+							
+					break;
+				}
+				
+				if(t==KEY_C)
+				{
+					
 					break;
 				}
 				
@@ -1001,30 +1531,9 @@ while(true)																							//Espera Enter para salir
 			
 			
 			
-			clear(buffer);																								//limpia buffer de pantalla
-			draw_sprite(buffer,fondo,0,0);																				//imprime fondo
-			draw_sprite(buffer,copiaproceso,150,130);																	//imprime mensaje de copia en proceso
-			draw_sprite(buffer,noremoveusb,150,160);																	//imprime mensaje de no remover usb
-			pantalla();
-		
-			CopiarADestino(varusb);																						//Funcion de transferencia de datos al usb destino
-		
-			clear(buffer);																								//limpia buffer de pantalla
-			draw_sprite(buffer,fondo,0,0);																				//imprime fondo			
-			draw_sprite(buffer,copialista,190,120);																		//imprime imagen de copia lista		
-			draw_sprite(buffer,press,150,200);																			//imprime imagen de presione enter
-			pantalla ();
 			
 			
-			while(true)																									//Espera Enter para salir
-			{
-				char tecla1= readkey() >> 8;
-				if(tecla1==KEY_ENTER)
-				{
-					break;
-				}
-			}
-		
+			
 			borrar();																									//borra archivos y carpetas auxiliares utilizados		
 		
 		
@@ -1044,7 +1553,7 @@ while(true)																							//Espera Enter para salir
 	
 	
 }
-end:    allegro_exit();
+          allegro_exit();
 		return 0;
 }
 END_OF_MAIN()
