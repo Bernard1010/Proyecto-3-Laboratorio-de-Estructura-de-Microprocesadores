@@ -466,10 +466,7 @@ bool RevisarError()																		//revisa si la memoria fue removida antes d
 					//	digitalWrite (LED, LOW);        								// se apaga el led
 						return true;
 					}
-					else
-					{
-						//return false;
-					}
+					
 				}
 			}
 		else 
@@ -887,8 +884,8 @@ while(true)																							//Espera Enter para salir
 {
 		char tecla1= readkey() >> 8;
 		
-		RevisarError();																		//funcion de revision de error
-		if (true)																			//si es verdadero salta al final y cierra el programa
+																				//funcion de revision de error
+		if (RevisarError())																			//si es verdadero salta al final y cierra el programa
 			{
 				goto end;
 			}
